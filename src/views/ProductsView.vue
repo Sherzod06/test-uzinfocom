@@ -36,7 +36,7 @@
                 </el-row>
             </el-card>
             <el-card>
-                <el-table :data="store.products" height="250" stripe border style="width: 100%">
+                <el-table :data="store.products" stripe border style="width: 100%">
                     <el-table-column prop="model" label="Модель" />
                     <el-table-column prop="released_date" label="Год релиза" :formatter="dateFormatter" />
 

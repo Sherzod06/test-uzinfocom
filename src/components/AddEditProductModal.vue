@@ -137,7 +137,7 @@ const dialogVisible = computed({
     }
 })
 
-const data = ref<IProduct>({})
+const data = ref<IProduct>()
 
 const upload = ref<UploadInstance>()
 
