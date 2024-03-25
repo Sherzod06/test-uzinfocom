@@ -4,7 +4,7 @@
         :title="isEdit ? 'Edit Product' : 'Add new Product'"
         width="800"
     >
-        <Form as="el-form" :validation-schema="schema" :model="data" label-position="top">
+        <Form v-if="dialogVisible" as="el-form" :validation-schema="schema" :model="data" label-position="top">
             <el-row :gutter="16">
                 <el-col :span="24">
                     <Field name="model" v-model="data.model" v-slot="{ value, field, errorMessage }">
@@ -31,8 +31,7 @@
                     <Field name="category" v-model="data.category" v-slot="{ value, field, errorMessage }">
                         <el-form-item label="Category" :error="errorMessage" required>
                             <el-select v-bind="field" :modelValue="value" :validate-event="false" placeholder="Please select a category">
-                                <el-option label="Zone No.1" value="shanghai" />
-                                <el-option label="Zone No.2" value="beijing" />
+                                <el-option v-for="category in categoriesStore.categories" :label="category.name" :key="category.id" :value="category.id" />
                             </el-select>
                         </el-form-item>
                     </Field>
@@ -46,7 +45,7 @@
                 </el-col>
                 <el-col :span="24">
                     <el-form-item label="Описание товара" required>
-                        <el-input v-model="data.description" type="textarea" :validate-event="false" autocomplete="off" placeholder="Model name"></el-input>
+                        <el-input v-model="data.description" type="textarea" :validate-event="false" autocomplete="off" placeholder="Description"></el-input>
                     </el-form-item>
                 </el-col>
                 <el-col :span="24">
@@ -84,7 +83,7 @@
         <template #footer>
             <div class="dialog-footer">
                 <el-button @click="dialogVisible = false">Cancel</el-button>
-                <el-button type="primary" @click="dialogVisible = false">
+                <el-button type="primary" @click="onSubmit">
                     Confirm
                 </el-button>
             </div>
@@ -94,11 +93,14 @@
 
 <script setup lang="ts">
 import type { IProduct } from '@/types';
-import { computed, ref, type PropType } from 'vue'
+import { computed, ref, watch, type PropType } from 'vue'
 import { Field, Form } from "vee-validate";
 import * as yup from "yup";
 import { genFileId } from 'element-plus'
 import type { UploadInstance, UploadProps, UploadRawFile } from 'element-plus'
+import { updateProduct, addNewProduct } from '@/service/products';
+import { ElMessage } from 'element-plus'
+import { useCategoriesStore } from '@/stores/categories';
 
 const props = defineProps({
     modelValue: {
@@ -123,7 +125,8 @@ const schema = yup.object({
     is_visible: yup.boolean().default(() => false)
 });
 
-const emits = defineEmits(['update:modelValue', 'onConfirm'])
+const emits = defineEmits(['update:modelValue', 'success'])
+const categoriesStore = useCategoriesStore()
 
 const dialogVisible = computed({
     get() {
@@ -152,8 +155,43 @@ const submitUpload = () => {
 function onImageUploadSuccess(r:any, f:any) {
     console.log(r)
     console.log(f)
-
 }
+
+watch(props, () => {
+    if (props.isEdit) {
+        data.value = props.product
+    } else {
+        data.value = {}
+    }
+})
+
+function onSubmit() {
+    if(props.isEdit) {
+        updateProduct(data.value).then(res => {
+            ElMessage({
+              type: 'success',
+              message: 'Update completed',
+            })
+            dialogVisible.value = false
+            emits('success')
+        })
+    } else {
+        const body = {
+            ...data.value,
+            // это на самом деле бекенд сделает (created_at)
+            created_at: new Date().toISOString()
+        }
+        addNewProduct(body).then(res => {
+            ElMessage({
+              type: 'success',
+              message: 'Successfully added',
+            })
+            dialogVisible.value = false
+            emits('success')
+        })
+    }
+}
+
 </script>
 
 <style scoped>
